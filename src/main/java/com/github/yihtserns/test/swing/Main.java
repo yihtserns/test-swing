@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -83,23 +85,22 @@ public class Main {
 
         Runnable r = () -> {
             List<String> currentProperties = new ArrayList<>();
-            MyBean.Option option = (MyBean.Option) pm.getValue(MyBean.Property.OPTION);
-            switch (option) {
-                case First:
-                    currentProperties.add(MyBean.Property.URL);
-                    break;
-                case Second:
-                    currentProperties.add(MyBean.Property.CHECKED_OPTION);
-                    boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
-                    if (checked) {
-                        currentProperties.add(MyBean.Property.URL3);
-                    } else {
-                        currentProperties.add(MyBean.Property.URL2);
-                    }
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Option: " + option);
-            }
+
+            Evaluator evaluator = new Evaluator();
+            evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
+                    .then(() -> currentProperties.add(MyBean.Property.URL));
+            evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
+                    .then(() -> {
+                        boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
+                        if (checked) {
+                            currentProperties.add(MyBean.Property.URL3);
+                        } else {
+                            currentProperties.add(MyBean.Property.URL2);
+                        }
+                        currentProperties.add(MyBean.Property.CHECKED_OPTION);
+                    });
+
+            evaluator.evaluate();
 
             List<String> irrelevantProperties = new ArrayList(variableProperties);
             irrelevantProperties.removeAll(currentProperties);
@@ -119,6 +120,46 @@ public class Main {
 
         JOptionPane.showConfirmDialog(null, panel);
         System.out.println(bean);
+    }
+
+    private static class Evaluator {
+
+        private List<Rule> rules = new ArrayList<>();
+
+        public Rule when(Condition condition) {
+            Rule rule = new Rule(condition);
+            rules.add(rule);
+
+            return rule;
+        }
+
+        public void evaluate() {
+            for (Rule rule : rules) {
+                if (rule.condition.matches()) {
+                    rule.action.run();
+                    return;
+                }
+            }
+        }
+    }
+
+    private interface Condition {
+
+        boolean matches();
+    }
+
+    private static class Rule {
+
+        private Condition condition;
+        private Runnable action;
+
+        public Rule(Condition condition) {
+            this.condition = condition;
+        }
+
+        public void then(Runnable action) {
+            this.action = action;
+        }
     }
 
     private static class Property {
