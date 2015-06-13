@@ -7,11 +7,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.swing.JCheckBox;
@@ -86,14 +85,14 @@ public class Main {
                 MyBean.Property.URL3);
 
         Evaluator evaluator = new Evaluator();
-        evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
-                .then(() -> Arrays.asList(MyBean.Property.URL));
-        evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
-                .then(() -> {
+        evaluator.when((PresentationModel model) -> model.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
+                .then((PresentationModel model) -> Arrays.asList(MyBean.Property.URL));
+        evaluator.when((PresentationModel model) -> model.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
+                .then((PresentationModel model) -> {
                     List<String> properties = new ArrayList<>();
                     properties.add(MyBean.Property.CHECKED_OPTION);
 
-                    boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
+                    boolean checked = (Boolean) model.getValue(MyBean.Property.CHECKED_OPTION);
                     if (checked) {
                         properties.add(MyBean.Property.URL3);
                     } else {
@@ -105,7 +104,7 @@ public class Main {
 
         Runnable r = () -> {
 
-            List<String> currentProperties = evaluator.evaluate();
+            List<String> currentProperties = evaluator.evaluate(pm);
 
             List<String> irrelevantProperties = new ArrayList(variableProperties);
             irrelevantProperties.removeAll(currentProperties);
@@ -131,17 +130,17 @@ public class Main {
 
         private List<Rule> rules = new ArrayList<>();
 
-        public Rule when(Condition condition) {
+        public Rule when(Predicate<PresentationModel> condition) {
             Rule rule = new Rule(condition);
             rules.add(rule);
 
             return rule;
         }
 
-        public List<String> evaluate() {
+        public List<String> evaluate(PresentationModel pm) {
             for (Rule rule : rules) {
-                if (rule.condition.matches()) {
-                    return rule.action.get();
+                if (rule.condition.test(pm)) {
+                    return rule.action.apply(pm);
                 }
             }
             // Should not happen?
@@ -149,21 +148,16 @@ public class Main {
         }
     }
 
-    private interface Condition {
-
-        boolean matches();
-    }
-
     private static class Rule {
 
-        private Condition condition;
-        private Supplier<List<String>> action;
+        private Predicate<PresentationModel> condition;
+        private Function<PresentationModel, List<String>> action;
 
-        public Rule(Condition condition) {
+        public Rule(Predicate<PresentationModel> condition) {
             this.condition = condition;
         }
 
-        public void then(Supplier<List<String>> action) {
+        public void then(Function<PresentationModel, List<String>> action) {
             this.action = action;
         }
     }
