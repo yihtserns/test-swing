@@ -85,13 +85,18 @@ public class Main {
 
         Evaluator evaluator = new Evaluator();
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.First)
-                .returnProperties(MyBean.Property.URL);
+                .returnProperties(
+                        MyBean.Property.URL);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(false))
-                .then((PresentationModel model) -> Arrays.asList(MyBean.Property.CHECKED_OPTION, MyBean.Property.URL2));
+                .returnProperties(
+                        MyBean.Property.CHECKED_OPTION,
+                        MyBean.Property.URL2);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(true))
-                .then((PresentationModel model) -> Arrays.asList(MyBean.Property.CHECKED_OPTION, MyBean.Property.URL3));
+                .returnProperties(
+                        MyBean.Property.CHECKED_OPTION,
+                        MyBean.Property.URL3);
 
         Runnable r = () -> {
 
