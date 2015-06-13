@@ -85,24 +85,25 @@ public class Main {
                 MyBean.Property.URL2,
                 MyBean.Property.URL3);
 
+        Evaluator evaluator = new Evaluator();
+        evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
+                .then(() -> Arrays.asList(MyBean.Property.URL));
+        evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
+                .then(() -> {
+                    List<String> properties = new ArrayList<>();
+                    properties.add(MyBean.Property.CHECKED_OPTION);
+
+                    boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
+                    if (checked) {
+                        properties.add(MyBean.Property.URL3);
+                    } else {
+                        properties.add(MyBean.Property.URL2);
+                    }
+
+                    return properties;
+                });
+
         Runnable r = () -> {
-            Evaluator evaluator = new Evaluator();
-            evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
-                    .then(() -> Arrays.asList(MyBean.Property.URL));
-            evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
-                    .then(() -> {
-                        List<String> properties = new ArrayList<>();
-                        properties.add(MyBean.Property.CHECKED_OPTION);
-
-                        boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
-                        if (checked) {
-                            properties.add(MyBean.Property.URL3);
-                        } else {
-                            properties.add(MyBean.Property.URL2);
-                        }
-
-                        return properties;
-                    });
 
             List<String> currentProperties = evaluator.evaluate();
 
