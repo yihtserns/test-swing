@@ -1,7 +1,15 @@
 package com.github.yihtserns.test.swing;
 
+import com.jgoodies.binding.PresentationModel;
+import com.jgoodies.binding.adapter.Bindings;
+import com.jgoodies.binding.list.SelectionInList;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.Map.Entry;
+import java.util.List;
+import java.util.Map;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -17,10 +25,8 @@ import javax.swing.JTextField;
 public class Main {
 
     public static void main(String[] args) {
-        Property2Value property2Value = new Property2Value();
-        property2Value.putProperty(Property.create("option", Option.class, "Options"), Option.First);
-        property2Value.putProperty(Property.create("checkedOption", Boolean.class, "Checked option"), Boolean.TRUE);
-        property2Value.putProperty(Property.create("url", String.class, "URL"), null);
+        MyBean bean = new MyBean();
+        final PresentationModel pm = new PresentationModel(bean);
 
         JPanel panel = new JPanel();
         PropertiesLayout layout = new PropertiesLayout(panel);
@@ -28,64 +34,110 @@ public class Main {
         layout.setAutoCreateGaps(true);
         layout.setAutoCreateContainerGaps(true);
 
-        for (Entry<Property, Object> entry : property2Value.entrySet()) {
-            Property property = entry.getKey();
-            Object value = entry.getValue();
+        Map<String, Property> name2Property = new LinkedHashMap<>();
+        {
+            JLabel label = new JLabel("Option:");
+            JComboBox comboBox = new JComboBox();
+            name2Property.put(MyBean.Property.OPTION, new Property(label, comboBox));
 
-            layout.addProperty(
-                    new JLabel(property.displayName + ":"),
-                    property.componentWithValue(value));
+            Bindings.bind(comboBox, new SelectionInList(MyBean.Option.values(), pm.getComponentModel(MyBean.Property.OPTION)));
         }
+        {
+            JLabel label = new JLabel("Checked Option:");
+            JCheckBox checkBox = new JCheckBox();
+            name2Property.put(MyBean.Property.CHECKED_OPTION, new Property(label, checkBox));
+
+            Bindings.bind(checkBox, pm.getComponentModel(MyBean.Property.CHECKED_OPTION));
+        }
+        {
+            JLabel label = new JLabel("URL:");
+            JTextField textField = new JTextField();
+            name2Property.put(MyBean.Property.URL, new Property(label, textField));
+
+            Bindings.bind(textField, pm.getComponentModel(MyBean.Property.URL));
+        }
+        {
+            JLabel label = new JLabel("URL 2:");
+            JTextField textField = new JTextField();
+            name2Property.put(MyBean.Property.URL2, new Property(label, textField));
+
+            Bindings.bind(textField, pm.getComponentModel(MyBean.Property.URL2));
+        }
+        {
+            JLabel label = new JLabel("URL 3:");
+            JTextField textField = new JTextField();
+            name2Property.put(MyBean.Property.URL3, new Property(label, textField));
+
+            Bindings.bind(textField, pm.getComponentModel(MyBean.Property.URL3));
+        }
+
+        for (Property property : name2Property.values()) {
+            property.addTo(layout);
+        }
+
+        List<String> variableProperties = Arrays.asList(
+                MyBean.Property.CHECKED_OPTION,
+                MyBean.Property.URL,
+                MyBean.Property.URL2,
+                MyBean.Property.URL3);
+
+        Runnable r = () -> {
+            List<String> currentProperties = new ArrayList<>();
+            MyBean.Option option = (MyBean.Option) pm.getValue(MyBean.Property.OPTION);
+            switch (option) {
+                case First:
+                    currentProperties.add(MyBean.Property.URL);
+                    break;
+                case Second:
+                    currentProperties.add(MyBean.Property.CHECKED_OPTION);
+                    boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
+                    if (checked) {
+                        currentProperties.add(MyBean.Property.URL3);
+                    } else {
+                        currentProperties.add(MyBean.Property.URL2);
+                    }
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Option: " + option);
+            }
+
+            List<String> irrelevantProperties = new ArrayList(variableProperties);
+            irrelevantProperties.removeAll(currentProperties);
+
+            for (String irrelevantProperty : irrelevantProperties) {
+                name2Property.get(irrelevantProperty).setVisible(false);
+            }
+            for (String currentProperty : currentProperties) {
+                name2Property.get(currentProperty).setVisible(true);
+            }
+        };
+        r.run();
+
+        PropertyChangeListener listener = (PropertyChangeEvent evt) -> r.run();
+        pm.getComponentModel(MyBean.Property.OPTION).addValueChangeListener(listener);
+        pm.getComponentModel(MyBean.Property.CHECKED_OPTION).addValueChangeListener(listener);
 
         JOptionPane.showConfirmDialog(null, panel);
+        System.out.println(bean);
     }
 
-    private static class Property<T> {
+    private static class Property {
 
-        public final String name;
-        public final Class<T> type;
-        public final String displayName;
+        private JLabel label;
+        private JComponent value;
 
-        private Property(String name, Class<T> type, String displayName) {
-            this.name = name;
-            this.type = type;
-            this.displayName = displayName;
+        public Property(JLabel label, JComponent value) {
+            this.label = label;
+            this.value = value;
         }
 
-        public JComponent componentWithValue(T value) {
-            if (type.isEnum()) {
-                JComboBox comboBox = new JComboBox(type.getEnumConstants());
-                comboBox.setSelectedItem(value);
-
-                return comboBox;
-            } else if (type == Boolean.class) {
-                JCheckBox checkBox = new JCheckBox();
-                checkBox.setSelected((Boolean) value);
-
-                return checkBox;
-            } else if (type == String.class) {
-                return new JTextField((String) value);
-            } else {
-                throw new UnsupportedOperationException("Unknown type: " + type);
-            }
+        public void setVisible(boolean visibility) {
+            label.setVisible(visibility);
+            value.setVisible(visibility);
         }
 
-        public static <T> Property<T> create(String name, Class<T> type, String displayName) {
-            return new Property<T>(name, type, displayName);
+        public void addTo(PropertiesLayout layout) {
+            layout.addProperty(label, value);
         }
-    }
-
-    private static class Property2Value extends LinkedHashMap<Property, Object> {
-
-        public <T> void putProperty(Property<T> property, T value) {
-            put(property, value);
-        }
-    }
-
-    private enum Option {
-
-        First,
-        Second,
-        Third
     }
 }
