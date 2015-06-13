@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -88,19 +87,11 @@ public class Main {
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.First)
                 .returnProperties(MyBean.Property.URL);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
-                .then((PresentationModel model) -> {
-                    List<String> properties = new ArrayList<>();
-                    properties.add(MyBean.Property.CHECKED_OPTION);
-
-                    boolean checked = (Boolean) model.getValue(MyBean.Property.CHECKED_OPTION);
-                    if (checked) {
-                        properties.add(MyBean.Property.URL3);
-                    } else {
-                        properties.add(MyBean.Property.URL2);
-                    }
-
-                    return properties;
-                });
+                .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(false))
+                .then((PresentationModel model) -> Arrays.asList(MyBean.Property.CHECKED_OPTION, MyBean.Property.URL2));
+        evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
+                .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(true))
+                .then((PresentationModel model) -> Arrays.asList(MyBean.Property.CHECKED_OPTION, MyBean.Property.URL3));
 
         Runnable r = () -> {
 
@@ -143,7 +134,7 @@ public class Main {
 
         public List<String> evaluate(PresentationModel pm) {
             for (Rule rule : rules) {
-                if (rule.condition.test(pm)) {
+                if (rule.matches(pm)) {
                     return rule.action.apply(pm);
                 }
             }
@@ -167,11 +158,16 @@ public class Main {
 
     private static class Rule {
 
-        private Predicate<PresentationModel> condition;
+        private List<Predicate<PresentationModel>> conditions = new ArrayList<>();
         private Function<PresentationModel, List<String>> action;
 
         public Rule(Predicate<PresentationModel> condition) {
-            this.condition = condition;
+            this.conditions.add(condition);
+        }
+
+        public Rule and(Predicate<PresentationModel> condition) {
+            this.conditions.add(condition);
+            return this;
         }
 
         public void then(Function<PresentationModel, List<String>> action) {
@@ -182,6 +178,15 @@ public class Main {
             List<String> result = Arrays.asList(propertyNames);
 
             then((PresentationModel model) -> result);
+        }
+
+        public boolean matches(PresentationModel pm) {
+            for (Predicate<PresentationModel> condition : conditions) {
+                if (!condition.test(pm)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
