@@ -88,19 +88,14 @@ public class Main {
         Evaluator evaluator = new Evaluator();
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.First)
                 .returnProperties(
-                        MyBean.Property.OPTION,
                         MyBean.Property.URL);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .andProperty(MyBean.Property.CHECKED_OPTION).is(false)
                 .returnProperties(
-                        MyBean.Property.OPTION,
-                        MyBean.Property.CHECKED_OPTION,
                         MyBean.Property.URL2);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .andProperty(MyBean.Property.CHECKED_OPTION).is(true)
                 .returnProperties(
-                        MyBean.Property.OPTION,
-                        MyBean.Property.CHECKED_OPTION,
                         MyBean.Property.URL3);
 
         Runnable r = () -> {
@@ -159,6 +154,7 @@ public class Main {
 
     public static class Rule {
 
+        private List<String> mandatoryProperties = new ArrayList<String>();
         private List<Predicate<PresentationModel>> conditions = new ArrayList<>();
         private Function<PresentationModel, List<String>> action;
 
@@ -168,6 +164,8 @@ public class Main {
         }
 
         public PropertyRule andProperty(String propertyName) {
+            this.mandatoryProperties.add(propertyName);
+
             return new PropertyRule(propertyName);
         }
 
@@ -176,7 +174,8 @@ public class Main {
         }
 
         public void returnProperties(String... propertyNames) {
-            List<String> result = Arrays.asList(propertyNames);
+            List<String> result = new ArrayList(Arrays.asList(propertyNames));
+            result.addAll(mandatoryProperties);
 
             then((PresentationModel model) -> result);
         }
