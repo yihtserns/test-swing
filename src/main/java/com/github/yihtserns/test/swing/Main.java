@@ -85,9 +85,9 @@ public class Main {
                 MyBean.Property.URL3);
 
         Evaluator evaluator = new Evaluator();
-        evaluator.when((PresentationModel model) -> model.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
-                .then((PresentationModel model) -> Arrays.asList(MyBean.Property.URL));
-        evaluator.when((PresentationModel model) -> model.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
+        evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.First)
+                .returnProperties(MyBean.Property.URL);
+        evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .then((PresentationModel model) -> {
                     List<String> properties = new ArrayList<>();
                     properties.add(MyBean.Property.CHECKED_OPTION);
@@ -137,6 +137,10 @@ public class Main {
             return rule;
         }
 
+        public PropertyRule whenProperty(String propertyName) {
+            return new PropertyRule(propertyName);
+        }
+
         public List<String> evaluate(PresentationModel pm) {
             for (Rule rule : rules) {
                 if (rule.condition.test(pm)) {
@@ -145,6 +149,19 @@ public class Main {
             }
             // Should not happen?
             throw new UnsupportedOperationException("No rule satisfied");
+        }
+
+        public class PropertyRule {
+
+            private String propertyName;
+
+            public PropertyRule(String propertyName) {
+                this.propertyName = propertyName;
+            }
+
+            public Rule is(Object value) {
+                return when((PresentationModel model) -> model.getValue(propertyName).equals(value));
+            }
         }
     }
 
@@ -159,6 +176,12 @@ public class Main {
 
         public void then(Function<PresentationModel, List<String>> action) {
             this.action = action;
+        }
+
+        public void returnProperties(String... propertyNames) {
+            List<String> result = Arrays.asList(propertyNames);
+
+            then((PresentationModel model) -> result);
         }
     }
 
