@@ -78,6 +78,7 @@ public class Main {
         }
 
         List<String> variableProperties = Arrays.asList(
+                MyBean.Property.OPTION,
                 MyBean.Property.CHECKED_OPTION,
                 MyBean.Property.URL,
                 MyBean.Property.URL2,
@@ -86,15 +87,18 @@ public class Main {
         Evaluator evaluator = new Evaluator();
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.First)
                 .returnProperties(
+                        MyBean.Property.OPTION,
                         MyBean.Property.URL);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(false))
                 .returnProperties(
+                        MyBean.Property.OPTION,
                         MyBean.Property.CHECKED_OPTION,
                         MyBean.Property.URL2);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
                 .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(true))
                 .returnProperties(
+                        MyBean.Property.OPTION,
                         MyBean.Property.CHECKED_OPTION,
                         MyBean.Property.URL3);
 
