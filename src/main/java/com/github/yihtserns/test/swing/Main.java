@@ -7,11 +7,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -84,23 +86,25 @@ public class Main {
                 MyBean.Property.URL3);
 
         Runnable r = () -> {
-            List<String> currentProperties = new ArrayList<>();
-
             Evaluator evaluator = new Evaluator();
             evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.First)
-                    .then(() -> currentProperties.add(MyBean.Property.URL));
+                    .then(() -> Arrays.asList(MyBean.Property.URL));
             evaluator.when(() -> pm.getValue(MyBean.Property.OPTION) == MyBean.Option.Second)
                     .then(() -> {
+                        List<String> properties = new ArrayList<>();
+                        properties.add(MyBean.Property.CHECKED_OPTION);
+
                         boolean checked = (Boolean) pm.getValue(MyBean.Property.CHECKED_OPTION);
                         if (checked) {
-                            currentProperties.add(MyBean.Property.URL3);
+                            properties.add(MyBean.Property.URL3);
                         } else {
-                            currentProperties.add(MyBean.Property.URL2);
+                            properties.add(MyBean.Property.URL2);
                         }
-                        currentProperties.add(MyBean.Property.CHECKED_OPTION);
+
+                        return properties;
                     });
 
-            evaluator.evaluate();
+            List<String> currentProperties = evaluator.evaluate();
 
             List<String> irrelevantProperties = new ArrayList(variableProperties);
             irrelevantProperties.removeAll(currentProperties);
@@ -133,13 +137,14 @@ public class Main {
             return rule;
         }
 
-        public void evaluate() {
+        public List<String> evaluate() {
             for (Rule rule : rules) {
                 if (rule.condition.matches()) {
-                    rule.action.run();
-                    return;
+                    return rule.action.get();
                 }
             }
+            // Should not happen?
+            throw new UnsupportedOperationException("No rule satisfied");
         }
     }
 
@@ -151,13 +156,13 @@ public class Main {
     private static class Rule {
 
         private Condition condition;
-        private Runnable action;
+        private Supplier<List<String>> action;
 
         public Rule(Condition condition) {
             this.condition = condition;
         }
 
-        public void then(Runnable action) {
+        public void then(Supplier<List<String>> action) {
             this.action = action;
         }
     }
