@@ -1,5 +1,6 @@
 package com.github.yihtserns.test.swing;
 
+import com.github.yihtserns.test.swing.Main.Rule.PropertyRule;
 import com.jgoodies.binding.PresentationModel;
 import com.jgoodies.binding.adapter.Bindings;
 import com.jgoodies.binding.list.SelectionInList;
@@ -90,13 +91,13 @@ public class Main {
                         MyBean.Property.OPTION,
                         MyBean.Property.URL);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
-                .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(false))
+                .andProperty(MyBean.Property.CHECKED_OPTION).is(false)
                 .returnProperties(
                         MyBean.Property.OPTION,
                         MyBean.Property.CHECKED_OPTION,
                         MyBean.Property.URL2);
         evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
-                .and((PresentationModel model) -> model.getValue(MyBean.Property.CHECKED_OPTION).equals(true))
+                .andProperty(MyBean.Property.CHECKED_OPTION).is(true)
                 .returnProperties(
                         MyBean.Property.OPTION,
                         MyBean.Property.CHECKED_OPTION,
@@ -131,14 +132,18 @@ public class Main {
         private List<Rule> rules = new ArrayList<>();
 
         public Rule when(Predicate<PresentationModel> condition) {
-            Rule rule = new Rule(condition);
-            rules.add(rule);
-
-            return rule;
+            return createAndAddRule().and(condition);
         }
 
         public PropertyRule whenProperty(String propertyName) {
-            return new PropertyRule(propertyName);
+            return createAndAddRule().andProperty(propertyName);
+        }
+
+        private Rule createAndAddRule() {
+            Rule rule = new Rule();
+            rules.add(rule);
+
+            return rule;
         }
 
         public List<String> evaluate(PresentationModel pm) {
@@ -150,33 +155,20 @@ public class Main {
             // Should not happen?
             throw new UnsupportedOperationException("No rule satisfied");
         }
-
-        public class PropertyRule {
-
-            private String propertyName;
-
-            public PropertyRule(String propertyName) {
-                this.propertyName = propertyName;
-            }
-
-            public Rule is(Object value) {
-                return when((PresentationModel model) -> model.getValue(propertyName).equals(value));
-            }
-        }
     }
 
-    private static class Rule {
+    public static class Rule {
 
         private List<Predicate<PresentationModel>> conditions = new ArrayList<>();
         private Function<PresentationModel, List<String>> action;
 
-        public Rule(Predicate<PresentationModel> condition) {
-            this.conditions.add(condition);
-        }
-
         public Rule and(Predicate<PresentationModel> condition) {
             this.conditions.add(condition);
             return this;
+        }
+
+        public PropertyRule andProperty(String propertyName) {
+            return new PropertyRule(propertyName);
         }
 
         public void then(Function<PresentationModel, List<String>> action) {
@@ -196,6 +188,20 @@ public class Main {
                 }
             }
             return true;
+        }
+
+        public class PropertyRule {
+
+            private String propertyName;
+
+            public PropertyRule(String propertyName) {
+                this.propertyName = propertyName;
+            }
+
+            public Rule is(Object value) {
+                and((PresentationModel model) -> model.getValue(propertyName).equals(value));
+                return Rule.this;
+            }
         }
     }
 
