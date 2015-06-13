@@ -1,6 +1,13 @@
 package com.github.yihtserns.test.swing;
 
 import com.github.yihtserns.test.swing.Main.Rule.PropertyRule;
+import static com.github.yihtserns.test.swing.MyBean.Option.First;
+import static com.github.yihtserns.test.swing.MyBean.Option.Second;
+import static com.github.yihtserns.test.swing.MyBean.Property.CHECKED_OPTION;
+import static com.github.yihtserns.test.swing.MyBean.Property.OPTION;
+import static com.github.yihtserns.test.swing.MyBean.Property.URL;
+import static com.github.yihtserns.test.swing.MyBean.Property.URL2;
+import static com.github.yihtserns.test.swing.MyBean.Property.URL3;
 import com.jgoodies.binding.PresentationModel;
 import com.jgoodies.binding.adapter.Bindings;
 import com.jgoodies.binding.list.SelectionInList;
@@ -86,17 +93,14 @@ public class Main {
                 MyBean.Property.URL3);
 
         Evaluator evaluator = new Evaluator();
-        evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.First)
-                .returnProperties(
-                        MyBean.Property.URL);
-        evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
-                .andProperty(MyBean.Property.CHECKED_OPTION).is(false)
-                .returnProperties(
-                        MyBean.Property.URL2);
-        evaluator.whenProperty(MyBean.Property.OPTION).is(MyBean.Option.Second)
-                .andProperty(MyBean.Property.CHECKED_OPTION).is(true)
-                .returnProperties(
-                        MyBean.Property.URL3);
+        evaluator.whenProperty(OPTION).is(First)
+                .returnProperties(URL);
+        evaluator.whenProperty(OPTION).is(Second)
+                .andProperty(CHECKED_OPTION).is(false)
+                .returnProperties(URL2);
+        evaluator.whenProperty(OPTION).is(Second)
+                .andProperty(CHECKED_OPTION).is(true)
+                .returnProperties(URL3);
 
         Runnable r = () -> {
 
