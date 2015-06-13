@@ -1,28 +1,24 @@
 package com.github.yihtserns.test.swing;
 
-import com.github.yihtserns.test.swing.Main.Rule.PropertyRule;
-import static com.github.yihtserns.test.swing.MyBean.Option.First;
-import static com.github.yihtserns.test.swing.MyBean.Option.Second;
-import static com.github.yihtserns.test.swing.MyBean.Property.CHECKED_OPTION;
-import static com.github.yihtserns.test.swing.MyBean.Property.OPTION;
-import static com.github.yihtserns.test.swing.MyBean.Property.URL;
-import static com.github.yihtserns.test.swing.MyBean.Property.URL2;
-import static com.github.yihtserns.test.swing.MyBean.Property.URL3;
+import com.github.yihtserns.test.swing.bean.Bean;
+import com.github.yihtserns.test.swing.bean.MyBean;
+import com.github.yihtserns.test.swing.bean.MyBeanPropertiesResolver;
 import com.jgoodies.binding.PresentationModel;
 import com.jgoodies.binding.adapter.Bindings;
 import com.jgoodies.binding.list.SelectionInList;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -34,8 +30,10 @@ import javax.swing.JTextField;
  */
 public class Main {
 
-    public static void main(String[] args) {
-        MyBean bean = new MyBean();
+    public static void main(String[] args) throws Exception {
+        Bean bean = new MyBean();
+        bean.setOption(Bean.Option.Second);
+        PropertiesResolver propsResolver = new MyBeanPropertiesResolver();
         final PresentationModel pm = new PresentationModel(bean);
 
         JPanel panel = new JPanel();
@@ -44,187 +42,137 @@ public class Main {
         layout.setAutoCreateGaps(true);
         layout.setAutoCreateContainerGaps(true);
 
-        Map<String, Property> name2Property = new LinkedHashMap<>();
-        {
-            JLabel label = new JLabel("Option:");
-            JComboBox comboBox = new JComboBox();
-            name2Property.put(MyBean.Property.OPTION, new Property(label, comboBox));
+        Map<String, UiControl> propertyName2UiControl = new LinkedHashMap<>();
+        propertyName2UiControl.put(
+                Bean.Property.option.name(),
+                forEnum(Bean.Property.option, Bean.Option.class));
+        propertyName2UiControl.put(
+                Bean.Property.checkedOption.name(),
+                forBoolean(Bean.Property.checkedOption));
+        propertyName2UiControl.put(
+                Bean.Property.url.name(),
+                forString(Bean.Property.url));
+        propertyName2UiControl.put(
+                Bean.Property.url2.name(),
+                forString(Bean.Property.url2));
+        propertyName2UiControl.put(
+                Bean.Property.url3.name(),
+                forString(Bean.Property.url3));
 
-            Bindings.bind(comboBox, new SelectionInList(MyBean.Option.values(), pm.getComponentModel(MyBean.Property.OPTION)));
-        }
-        {
-            JLabel label = new JLabel("Checked Option:");
-            JCheckBox checkBox = new JCheckBox();
-            name2Property.put(MyBean.Property.CHECKED_OPTION, new Property(label, checkBox));
-
-            Bindings.bind(checkBox, pm.getComponentModel(MyBean.Property.CHECKED_OPTION));
-        }
-        {
-            JLabel label = new JLabel("URL:");
-            JTextField textField = new JTextField();
-            name2Property.put(MyBean.Property.URL, new Property(label, textField));
-
-            Bindings.bind(textField, pm.getComponentModel(MyBean.Property.URL));
-        }
-        {
-            JLabel label = new JLabel("URL 2:");
-            JTextField textField = new JTextField();
-            name2Property.put(MyBean.Property.URL2, new Property(label, textField));
-
-            Bindings.bind(textField, pm.getComponentModel(MyBean.Property.URL2));
-        }
-        {
-            JLabel label = new JLabel("URL 3:");
-            JTextField textField = new JTextField();
-            name2Property.put(MyBean.Property.URL3, new Property(label, textField));
-
-            Bindings.bind(textField, pm.getComponentModel(MyBean.Property.URL3));
+        for (UiControl uiObject : propertyName2UiControl.values()) {
+            uiObject.addTo(layout);
+            uiObject.bindTo(pm);
         }
 
-        for (Property property : name2Property.values()) {
-            property.addTo(layout);
-        }
+        BeanInfo beanInfo = Introspector.getBeanInfo(Bean.class);
+        List<String> allProps = Arrays.asList(beanInfo.getPropertyDescriptors())
+                .stream()
+                .map((PropertyDescriptor desc) -> desc.getName())
+                .collect(Collectors.toList());
 
-        List<String> variableProperties = Arrays.asList(
-                MyBean.Property.OPTION,
-                MyBean.Property.CHECKED_OPTION,
-                MyBean.Property.URL,
-                MyBean.Property.URL2,
-                MyBean.Property.URL3);
+        PropertyChangeListener updateUiControls = (PropertyChangeEvent evt) -> {
+            List<String> relevantProps = propsResolver.resolveProperties(pm)
+                    .stream()
+                    .map((Property prop) -> prop.name())
+                    .collect(Collectors.toList());
 
-        Evaluator evaluator = new Evaluator();
-        evaluator.whenProperty(OPTION).is(First)
-                .returnProperties(URL);
-        evaluator.whenProperty(OPTION).is(Second)
-                .andProperty(CHECKED_OPTION).is(false)
-                .returnProperties(URL2);
-        evaluator.whenProperty(OPTION).is(Second)
-                .andProperty(CHECKED_OPTION).is(true)
-                .returnProperties(URL3);
+            List<String> irrelevantProps = new ArrayList(allProps);
+            irrelevantProps.removeAll(relevantProps);
 
-        Runnable r = () -> {
-
-            List<String> currentProperties = evaluator.evaluate(pm);
-
-            List<String> irrelevantProperties = new ArrayList(variableProperties);
-            irrelevantProperties.removeAll(currentProperties);
-
-            for (String irrelevantProperty : irrelevantProperties) {
-                name2Property.get(irrelevantProperty).setVisible(false);
+            for (String prop : relevantProps) {
+                propertyName2UiControl.get(prop).setVisible(true);
             }
-            for (String currentProperty : currentProperties) {
-                name2Property.get(currentProperty).setVisible(true);
+
+            for (String prop : irrelevantProps) {
+                propertyName2UiControl.get(prop).setVisible(false);
             }
         };
-        r.run();
 
-        PropertyChangeListener listener = (PropertyChangeEvent evt) -> r.run();
-        pm.getComponentModel(MyBean.Property.OPTION).addValueChangeListener(listener);
-        pm.getComponentModel(MyBean.Property.CHECKED_OPTION).addValueChangeListener(listener);
+        pm.addBeanPropertyChangeListener(Bean.Property.option.name(), updateUiControls);
+        pm.addBeanPropertyChangeListener(Bean.Property.checkedOption.name(), updateUiControls);
 
+        updateUiControls.propertyChange(null);
         JOptionPane.showConfirmDialog(null, panel);
-        System.out.println(bean);
     }
 
-    private static class Evaluator {
+    private static UiControl forString(final Property property) {
+        final JLabel label = new JLabel(property.displayName() + ":");
+        final JTextField textField = new JTextField();
+        return new UiControl() {
 
-        private List<Rule> rules = new ArrayList<>();
-
-        public Rule when(Predicate<PresentationModel> condition) {
-            return createAndAddRule().and(condition);
-        }
-
-        public PropertyRule whenProperty(String propertyName) {
-            return createAndAddRule().andProperty(propertyName);
-        }
-
-        private Rule createAndAddRule() {
-            Rule rule = new Rule();
-            rules.add(rule);
-
-            return rule;
-        }
-
-        public List<String> evaluate(PresentationModel pm) {
-            for (Rule rule : rules) {
-                if (rule.matches(pm)) {
-                    return rule.action.apply(pm);
-                }
+            @Override
+            public void addTo(PropertiesLayout layout) {
+                layout.addProperty(label, textField);
             }
-            // Should not happen?
-            throw new UnsupportedOperationException("No rule satisfied");
-        }
+
+            @Override
+            public void setVisible(boolean visibility) {
+                label.setVisible(visibility);
+                textField.setVisible(visibility);
+            }
+
+            @Override
+            public void bindTo(PresentationModel pm) {
+                Bindings.bind(textField, pm.getModel(property.name()));
+            }
+        };
     }
 
-    public static class Rule {
+    private static UiControl forBoolean(final Property property) {
+        final JLabel label = new JLabel(property.displayName() + ":");
+        final JCheckBox checkBox = new JCheckBox();
+        return new UiControl() {
 
-        private List<String> mandatoryProperties = new ArrayList<String>();
-        private List<Predicate<PresentationModel>> conditions = new ArrayList<>();
-        private Function<PresentationModel, List<String>> action;
-
-        public Rule and(Predicate<PresentationModel> condition) {
-            this.conditions.add(condition);
-            return this;
-        }
-
-        public PropertyRule andProperty(String propertyName) {
-            this.mandatoryProperties.add(propertyName);
-
-            return new PropertyRule(propertyName);
-        }
-
-        public void then(Function<PresentationModel, List<String>> action) {
-            this.action = action;
-        }
-
-        public void returnProperties(String... propertyNames) {
-            List<String> result = new ArrayList(Arrays.asList(propertyNames));
-            result.addAll(mandatoryProperties);
-
-            then((PresentationModel model) -> result);
-        }
-
-        public boolean matches(PresentationModel pm) {
-            for (Predicate<PresentationModel> condition : conditions) {
-                if (!condition.test(pm)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public class PropertyRule {
-
-            private String propertyName;
-
-            public PropertyRule(String propertyName) {
-                this.propertyName = propertyName;
+            @Override
+            public void addTo(PropertiesLayout layout) {
+                layout.addProperty(label, checkBox);
             }
 
-            public Rule is(Object value) {
-                and((PresentationModel model) -> model.getValue(propertyName).equals(value));
-                return Rule.this;
+            @Override
+            public void setVisible(boolean visibility) {
+                label.setVisible(visibility);
+                checkBox.setVisible(visibility);
             }
-        }
+
+            @Override
+            public void bindTo(PresentationModel pm) {
+                Bindings.bind(checkBox, pm.getModel(property.name()));
+            }
+        };
     }
 
-    private static class Property {
+    private static UiControl forEnum(final Property property, final Class<? extends Enum> enumClass) {
+        final JLabel label = new JLabel(property.displayName() + ":");
+        final JComboBox comboBox = new JComboBox();
+        return new UiControl() {
 
-        private JLabel label;
-        private JComponent value;
+            @Override
+            public void addTo(PropertiesLayout layout) {
+                layout.addProperty(label, comboBox);
+            }
 
-        public Property(JLabel label, JComponent value) {
-            this.label = label;
-            this.value = value;
-        }
+            @Override
+            public void setVisible(boolean visibility) {
+                label.setVisible(visibility);
+                comboBox.setVisible(visibility);
+            }
 
-        public void setVisible(boolean visibility) {
-            label.setVisible(visibility);
-            value.setVisible(visibility);
-        }
+            @Override
+            public void bindTo(PresentationModel pm) {
+                SelectionInList selectionInList = new SelectionInList(
+                        enumClass.getEnumConstants(),
+                        pm.getModel(property.name()));
+                Bindings.bind(comboBox, selectionInList);
+            }
+        };
+    }
 
-        public void addTo(PropertiesLayout layout) {
-            layout.addProperty(label, value);
-        }
+    private interface UiControl {
+
+        void addTo(PropertiesLayout layout);
+
+        void setVisible(boolean visibility);
+
+        void bindTo(PresentationModel pm);
     }
 }
