@@ -20,7 +20,7 @@ import javax.swing.JPanel;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        Bean bean = new MyBean();
+        Bean bean = BeanProxy.proxyFor(new MyBean());
         show(bean);
         print(bean);
     }
