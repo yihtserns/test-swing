@@ -10,4 +10,6 @@ import java.util.List;
 public interface PropertiesResolver {
 
     List<Property> resolveProperties(PresentationModel pm);
+
+    List<Property> resolveAllProperties();
 }

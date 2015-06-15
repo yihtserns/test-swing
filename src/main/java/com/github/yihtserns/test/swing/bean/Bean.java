@@ -34,21 +34,28 @@ public interface Bean {
 
     enum Property implements com.github.yihtserns.test.swing.Property {
 
-        option("Option"),
-        checkedOption("Checked option"),
-        url("URL"),
-        url2("URL 2"),
-        url3("URL 3");
+        option("Option", Option.class),
+        checkedOption("Checked option", boolean.class),
+        url("URL", String.class),
+        url2("URL 2", String.class),
+        url3("URL 3", String.class);
 
         private String displayName;
+        private Class<?> type;
 
-        Property(String displayName) {
+        Property(String displayName, Class<?> type) {
             this.displayName = displayName;
+            this.type = type;
         }
 
         @Override
         public String displayName() {
             return this.displayName;
+        }
+
+        @Override
+        public Class<?> type() {
+            return type;
         }
     }
 }

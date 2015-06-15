@@ -9,4 +9,6 @@ public interface Property {
     String name();
 
     String displayName();
+
+    Class<?> type();
 }

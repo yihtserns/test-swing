@@ -1,5 +1,7 @@
 package com.github.yihtserns.test.swing.bean;
 
+import com.jgoodies.binding.PresentationModel;
+import com.jgoodies.binding.value.ValueModel;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
@@ -23,6 +25,9 @@ public class MyBean implements Bean {
 
     @Override
     public void setOption(Option option) {
+        // Fire property changes so Presentation/ValueModel listener can work
+        // see ValueModel#addValueChangeListener(PropertyChangeListener)
+        // see PresentationModel#addBeanPropertyChangeListener(String, PropertyChangeListener)
         pcs.firePropertyChange(
                 Property.option.name(),
                 this.option,
@@ -36,6 +41,9 @@ public class MyBean implements Bean {
 
     @Override
     public void setCheckedOption(boolean checkedOption) {
+        // Fire property changes so Presentation/ValueModel listener can work
+        // see ValueModel#addValueChangeListener(PropertyChangeListener)
+        // see PresentationModel#addBeanPropertyChangeListener(String, PropertyChangeListener)
         pcs.firePropertyChange(
                 Property.checkedOption.name(),
                 this.checkedOption,

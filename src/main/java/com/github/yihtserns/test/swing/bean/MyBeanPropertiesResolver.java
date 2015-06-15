@@ -40,4 +40,14 @@ public class MyBeanPropertiesResolver implements PropertiesResolver {
             throw new UnsupportedOperationException("Unsupported option: " + option);
         }
     }
+
+    @Override
+    public List<Property> resolveAllProperties() {
+        return Arrays.asList(
+                Bean.Property.option,
+                Bean.Property.checkedOption,
+                Bean.Property.url,
+                Bean.Property.url2,
+                Bean.Property.url3);
+    }
 }
