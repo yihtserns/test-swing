@@ -41,8 +41,12 @@ public class PropertiesLayout implements LayoutManager2 {
         this.horizontalIdentifierGroup.addComponent(identifier);
         this.horizontalValueGroup.addComponent(value);
 
+        final int minHeight = GroupLayout.PREFERRED_SIZE;
+        final int preferredHeight = GroupLayout.DEFAULT_SIZE;
+        final int maxHeight = GroupLayout.PREFERRED_SIZE;
         this.verticalGroup.addGroup(layout.createParallelGroup()
-                .addComponent(identifier).addComponent(value)
+                .addComponent(identifier, minHeight, preferredHeight, maxHeight)
+                .addComponent(value, minHeight, preferredHeight, maxHeight)
         );
     }
 
