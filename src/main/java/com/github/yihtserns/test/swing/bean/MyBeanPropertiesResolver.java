@@ -24,17 +24,17 @@ public class MyBeanPropertiesResolver implements PropertiesResolver {
         } else if (Bean.Option.Second.equals(option)) {
             Object checkedOption = pm.getValue(Bean.Property.checkedOption.name());
 
-            if (Boolean.TRUE.equals(checkedOption)) {
-                return Arrays.asList(
-                        Bean.Property.option,
-                        Bean.Property.checkedOption,
-                        Bean.Property.url3);
-            } else {
+            if (Boolean.FALSE.equals(checkedOption)) {
                 return Arrays.asList(
                         Bean.Property.option,
                         Bean.Property.checkedOption,
                         Bean.Property.url2);
-
+            } else {
+                return Arrays.asList(
+                        Bean.Property.option,
+                        Bean.Property.checkedOption,
+                        Bean.Property.url,
+                        Bean.Property.url3);
             }
         } else {
             throw new UnsupportedOperationException("Unsupported option: " + option);
@@ -45,8 +45,8 @@ public class MyBeanPropertiesResolver implements PropertiesResolver {
     public List<Property> resolveAllProperties() {
         return Arrays.asList(
                 Bean.Property.option,
-                Bean.Property.checkedOption,
                 Bean.Property.url,
+                Bean.Property.checkedOption,
                 Bean.Property.url2,
                 Bean.Property.url3);
     }
