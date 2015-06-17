@@ -2,7 +2,7 @@ package com.github.yihtserns.test.swing;
 
 import com.github.yihtserns.test.swing.bean.Bean;
 import com.github.yihtserns.test.swing.bean.MyBean;
-import com.github.yihtserns.test.swing.bean.MyBeanPropertiesResolver;
+import com.github.yihtserns.test.swing.experimental.MyBeanPropertiesResolver;
 import com.jgoodies.binding.PresentationModel;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -19,6 +19,8 @@ import javax.swing.JPanel;
  */
 public class Main {
 
+    private static PropertiesResolver propsResolver = new MyBeanPropertiesResolver();
+
     public static void main(String[] args) throws Exception {
         Bean bean = new MyBean();
         show(bean);
@@ -26,7 +28,6 @@ public class Main {
     }
 
     private static void show(Bean bean) throws Exception {
-        PropertiesResolver propsResolver = new MyBeanPropertiesResolver();
         List<Property> allProps = propsResolver.resolveAllProperties();
 
         Map<Property, UiControl> property2UiControl = new LinkedHashMap<>();
@@ -70,7 +71,7 @@ public class Main {
 
     private static void print(Bean bean) {
         PresentationModel pm = new PresentationModel(bean);
-        List<Property> properties = new MyBeanPropertiesResolver().resolveProperties(pm);
+        List<Property> properties = propsResolver.resolveProperties(pm);
 
         System.out.println("########################");
         for (Property property : properties) {
