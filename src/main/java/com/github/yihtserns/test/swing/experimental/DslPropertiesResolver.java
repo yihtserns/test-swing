@@ -66,9 +66,9 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
         return new Returns(properties);
     }
 
-    protected static class When extends MyBeanPropertiesResolver.And {
+    protected static class When extends And {
 
-        public When(Property property, MyBeanPropertiesResolver.Is... is) {
+        public When(Property property, Is... is) {
             super(property, is);
         }
     }
@@ -76,9 +76,9 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
     protected static class And {
 
         private Property property;
-        private MyBeanPropertiesResolver.Is[] is;
+        private Is[] is;
 
-        public And(Property property, MyBeanPropertiesResolver.Is... is) {
+        public And(Property property, Is... is) {
             super();
             this.property = property;
             this.is = is;
@@ -86,14 +86,14 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
 
         public void addTo(Collection<Property> properties) {
             properties.add(property);
-            for (MyBeanPropertiesResolver.Is i : is) {
+            for (Is i : is) {
                 i.addTo(properties);
             }
         }
 
         public List<Property> eval(PresentationModel pm) {
             Object value = pm.getValue(property.name());
-            for (MyBeanPropertiesResolver.Is i : is) {
+            for (Is i : is) {
                 List<Property> props = i.eval(value, pm);
                 if (!props.isEmpty()) {
                     return props;
@@ -107,16 +107,16 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
     protected static class Is {
 
         private Object value;
-        private MyBeanPropertiesResolver.Returns returns;
-        private MyBeanPropertiesResolver.And and;
+        private Returns returns;
+        private And and;
 
-        public Is(Object value, MyBeanPropertiesResolver.Returns returns) {
+        public Is(Object value, Returns returns) {
             super();
             this.value = value;
             this.returns = returns;
         }
 
-        public Is(Enum value, MyBeanPropertiesResolver.And and) {
+        public Is(Enum value, And and) {
             super();
             this.value = value;
             this.and = and;
