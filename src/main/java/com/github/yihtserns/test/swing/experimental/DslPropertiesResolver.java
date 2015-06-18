@@ -73,7 +73,7 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
         }
     }
 
-    protected static class And {
+    protected static class And implements Eval {
 
         private Property property;
         private Is[] is;
@@ -84,6 +84,7 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
             this.is = is;
         }
 
+        @Override
         public void addTo(Collection<Property> properties) {
             properties.add(property);
             for (Is i : is) {
@@ -91,6 +92,7 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
             }
         }
 
+        @Override
         public List<Property> eval(PresentationModel pm) {
             Object value = pm.getValue(property.name());
             for (Is i : is) {
@@ -107,42 +109,26 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
     protected static class Is {
 
         private Object value;
-        private Returns returns;
-        private And and;
+        private Eval eval;
 
-        public Is(Object value, Returns returns) {
-            super();
+        public Is(Object value, Eval eval) {
             this.value = value;
-            this.returns = returns;
-        }
-
-        public Is(Enum value, And and) {
-            super();
-            this.value = value;
-            this.and = and;
+            this.eval = eval;
         }
 
         public void addTo(Collection<Property> properties) {
-            if (returns != null) {
-                returns.addTo(properties);
-            }
-            if (and != null) {
-                and.addTo(properties);
-            }
+            eval.addTo(properties);
         }
 
         public List<Property> eval(Object value, PresentationModel pm) {
             if (this.value.equals(value)) {
-                if (returns != null) {
-                    return returns.properties;
-                }
-                return and.eval(pm);
+                return eval.eval(pm);
             }
             return Collections.emptyList();
         }
     }
 
-    protected static class Returns {
+    protected static class Returns implements Eval {
 
         private List<Property> properties;
 
@@ -151,8 +137,21 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
             this.properties = Arrays.asList(properties);
         }
 
+        @Override
         public void addTo(Collection<Property> properties) {
             properties.addAll(this.properties);
         }
+
+        @Override
+        public List<Property> eval(PresentationModel pm) {
+            return properties;
+        }
+    }
+
+    protected interface Eval {
+
+        void addTo(Collection<Property> properties);
+
+        List<Property> eval(PresentationModel pm);
     }
 }
