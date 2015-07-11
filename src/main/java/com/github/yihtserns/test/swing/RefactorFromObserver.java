@@ -14,9 +14,12 @@ import static com.github.yihtserns.test.swing.bean.Bean.Property.url3;
 import com.github.yihtserns.test.swing.bean.MyBean;
 import com.github.yihtserns.test.swing.experimental.MyBeanPropertiesResolver;
 import com.jgoodies.binding.PresentationModel;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
@@ -50,13 +53,31 @@ public class RefactorFromObserver {
             if (property != null && property != option && property != checkedOption) {
                 return;
             }
+
             Option optionVal = (Option) pm.getValue(option.name());
             boolean checkedOptionVal = (boolean) pm.getValue(checkedOption.name());
 
-            property2UiControl.get(checkedOption).setVisible(optionVal == Second);
-            property2UiControl.get(url).setVisible(optionVal == First || checkedOptionVal);
-            property2UiControl.get(url2).setVisible(optionVal == Second && !checkedOptionVal);
-            property2UiControl.get(url3).setVisible(optionVal == Second && checkedOptionVal);
+            Set<Bean.Property> relevantProps = new HashSet<>();
+            relevantProps.add(option);
+            if (optionVal == First) {
+                relevantProps.add(url);
+            } else if (optionVal == Second) {
+                relevantProps.add(checkedOption);
+                if (checkedOptionVal) {
+                    relevantProps.add(url);
+                    relevantProps.add(url3);
+                } else {
+                    relevantProps.add(url2);
+                }
+            }
+            Set<Bean.Property> irrelevantProps = EnumSet.complementOf(EnumSet.copyOf(relevantProps));
+
+            for (Bean.Property relevantProp : relevantProps) {
+                property2UiControl.get(relevantProp).setVisible(true);
+            }
+            for (Bean.Property irrelevantProp : irrelevantProps) {
+                property2UiControl.get(irrelevantProp).setVisible(false);
+            }
         };
 
         for (UiControl uiObject : property2UiControl.values()) {
