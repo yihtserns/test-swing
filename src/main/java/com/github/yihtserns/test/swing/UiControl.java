@@ -3,6 +3,8 @@ package com.github.yihtserns.test.swing;
 import com.jgoodies.binding.PresentationModel;
 import com.jgoodies.binding.adapter.Bindings;
 import com.jgoodies.binding.list.SelectionInList;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -34,6 +36,8 @@ abstract class UiControl {
 
     public abstract void bindTo(PresentationModel pm);
 
+    public abstract void onChange(Runnable runnable);
+
     public static UiControl createFor(Property property) {
         Class<?> propertyType = property.type();
         if (propertyType.isEnum()) {
@@ -59,6 +63,11 @@ abstract class UiControl {
                         pm.getModel(property.name()));
                 Bindings.bind(comboBox, selectionInList);
             }
+
+            @Override
+            public void onChange(Runnable runnable) {
+                comboBox.addItemListener((evt) -> runnable.run());
+            }
         };
     }
 
@@ -70,6 +79,17 @@ abstract class UiControl {
             public void bindTo(PresentationModel pm) {
                 Bindings.bind(textField, pm.getModel(property.name()));
             }
+
+            @Override
+            public void onChange(Runnable runnable) {
+                textField.addKeyListener(new KeyAdapter() {
+
+                    @Override
+                    public void keyTyped(KeyEvent ke) {
+                        runnable.run();
+                    }
+                });
+            }
         };
     }
 
@@ -80,6 +100,11 @@ abstract class UiControl {
             @Override
             public void bindTo(PresentationModel pm) {
                 Bindings.bind(checkBox, pm.getModel(property.name()));
+            }
+
+            @Override
+            public void onChange(Runnable runnable) {
+                checkBox.addItemListener((evt) -> runnable.run());
             }
         };
     }
