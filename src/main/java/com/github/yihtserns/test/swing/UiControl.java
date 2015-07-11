@@ -36,7 +36,7 @@ abstract class UiControl {
 
     public abstract void bindTo(PresentationModel pm);
 
-    public abstract void onChange(Runnable runnable);
+    public abstract void onChange(ChangeHandler changeHandler);
 
     public static UiControl createFor(Property property) {
         Class<?> propertyType = property.type();
@@ -65,8 +65,8 @@ abstract class UiControl {
             }
 
             @Override
-            public void onChange(Runnable runnable) {
-                comboBox.addItemListener((evt) -> runnable.run());
+            public void onChange(ChangeHandler changeHandler) {
+                comboBox.addItemListener((evt) -> changeHandler.handle(new ChangeEvent(property)));
             }
         };
     }
@@ -81,12 +81,12 @@ abstract class UiControl {
             }
 
             @Override
-            public void onChange(Runnable runnable) {
+            public void onChange(ChangeHandler changeHandler) {
                 textField.addKeyListener(new KeyAdapter() {
 
                     @Override
                     public void keyTyped(KeyEvent ke) {
-                        runnable.run();
+                        changeHandler.handle(new ChangeEvent(property));
                     }
                 });
             }
@@ -103,9 +103,23 @@ abstract class UiControl {
             }
 
             @Override
-            public void onChange(Runnable runnable) {
-                checkBox.addItemListener((evt) -> runnable.run());
+            public void onChange(ChangeHandler changeHandler) {
+                checkBox.addItemListener((evt) -> changeHandler.handle(new ChangeEvent(property)));
             }
         };
+    }
+
+    interface ChangeHandler {
+
+        void handle(ChangeEvent evt);
+    }
+
+    public static class ChangeEvent {
+
+        public final Object source;
+
+        public ChangeEvent(Object source) {
+            this.source = source;
+        }
     }
 }

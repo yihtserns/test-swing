@@ -1,5 +1,7 @@
 package com.github.yihtserns.test.swing;
 
+import com.github.yihtserns.test.swing.UiControl.ChangeEvent;
+import com.github.yihtserns.test.swing.UiControl.ChangeHandler;
 import com.github.yihtserns.test.swing.bean.Bean;
 import com.github.yihtserns.test.swing.bean.Bean.Option;
 import static com.github.yihtserns.test.swing.bean.Bean.Option.First;
@@ -43,40 +45,27 @@ public class RefactorFromObserver {
         layout.setAutoCreateGaps(true);
         layout.setAutoCreateContainerGaps(true);
 
-        for (UiControl uiObject : property2UiControl.values()) {
-            uiObject.addTo(layout);
-            uiObject.bindTo(pm);
-        }
-
-        Runnable evalCheckedOption = () -> {
+        ChangeHandler changeHandler = (evt) -> {
+            Bean.Property property = (Bean.Property) evt.source;
+            if (property != null && property != option && property != checkedOption) {
+                return;
+            }
             Option optionVal = (Option) pm.getValue(option.name());
             boolean checkedOptionVal = (boolean) pm.getValue(checkedOption.name());
 
+            property2UiControl.get(checkedOption).setVisible(optionVal == Second);
             property2UiControl.get(url).setVisible(optionVal == First || checkedOptionVal);
             property2UiControl.get(url2).setVisible(optionVal == Second && !checkedOptionVal);
             property2UiControl.get(url3).setVisible(optionVal == Second && checkedOptionVal);
         };
-        Runnable evalOption = () -> {
-            Option optionVal = (Option) pm.getValue(option.name());
-            switch (optionVal) {
-                case First:
-                    property2UiControl.get(checkedOption).setVisible(false);
-                    property2UiControl.get(url).setVisible(false);
-                    break;
-                case Second:
-                    property2UiControl.get(checkedOption).setVisible(true);
-                    property2UiControl.get(url).setVisible(true);
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Unsupported option: " + optionVal);
-            }
-            evalCheckedOption.run();
-        };
 
-        property2UiControl.get(option).onChange(evalOption);
-        property2UiControl.get(checkedOption).onChange(evalCheckedOption);
+        for (UiControl uiObject : property2UiControl.values()) {
+            uiObject.addTo(layout);
+            uiObject.bindTo(pm);
+            uiObject.onChange(changeHandler);
+        }
 
-        evalOption.run();
+        changeHandler.handle(new ChangeEvent(null));
         JOptionPane.showMessageDialog(null, panel);
     }
 }
