@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,30 +46,24 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
 
     protected static When when(Property property, Is... is) {
         Class<?> type = property.type();
+        Set<?> values = Collections.emptySet();
+
         if (type.isEnum()) {
-            Set<?> enumValues = EnumSet.allOf(type.asSubclass(Enum.class));
-            for (Is i : is) {
-                enumValues.remove(i.value);
-            }
-            if (!enumValues.isEmpty()) {
-                String msg = String.format("Unspecified condition for when property %s is %s",
-                        property.name(),
-                        enumValues);
-                throw new IllegalArgumentException(msg);
-            }
+            values = EnumSet.allOf(type.asSubclass(Enum.class));
+        } else if (type == boolean.class || type == Boolean.class) {
+            values = new HashSet<>(Arrays.asList(Boolean.FALSE, Boolean.TRUE));
         }
-        if (type == boolean.class || type == Boolean.class) {
-            List<?> booleanValues = new ArrayList<>(Arrays.asList(Boolean.FALSE, Boolean.TRUE));
-            for (Is i : is) {
-                booleanValues.remove(i.value);
-            }
-            if (!booleanValues.isEmpty()) {
-                String msg = String.format("Unspecified condition for when property %s is %s",
-                        property.name(),
-                        booleanValues);
-                throw new IllegalArgumentException(msg);
-            }
+
+        for (Is i : is) {
+            values.remove(i.value);
         }
+        if (!values.isEmpty()) {
+            String msg = String.format("Unspecified condition for when property %s is %s",
+                    property.name(),
+                    values);
+            throw new IllegalArgumentException(msg);
+        }
+
         return new When(property, is);
     }
 
