@@ -16,9 +16,9 @@ public class MyBeanPropertiesResolver extends DslPropertiesResolver {
 
     public MyBeanPropertiesResolver() {
         super(when(option,
-                is(First, returns(option, url)),
+                is(First, returns(url)),
                 is(Second, and(checkedOption,
-                                is(false, returns(option, checkedOption, url2)),
-                                is(true, returns(option, checkedOption, url, url3))))));
+                                is(false, returns(url2)),
+                                is(true, returns(url, url3))))));
     }
 }

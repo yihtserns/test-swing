@@ -97,9 +97,18 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
             Object value = pm.getValue(property.name());
             for (Is i : is) {
                 List<Property> props = i.eval(value, pm);
-                if (!props.isEmpty()) {
+                if (props.isEmpty()) {
+                    continue;
+                }
+
+                if (props.contains(property)) {
                     return props;
                 }
+
+                List<Property> completeProps = new ArrayList<>(props);
+                completeProps.add(0, property);
+
+                return completeProps;
             }
             // Should not happen
             throw new RuntimeException();
