@@ -57,6 +57,18 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
                 throw new IllegalArgumentException(msg);
             }
         }
+        if (type == boolean.class || type == Boolean.class) {
+            List<?> booleanValues = new ArrayList<>(Arrays.asList(Boolean.FALSE, Boolean.TRUE));
+            for (Is i : is) {
+                booleanValues.remove(i.value);
+            }
+            if (!booleanValues.isEmpty()) {
+                String msg = String.format("Unspecified condition for when property %s is %s",
+                        property.name(),
+                        booleanValues);
+                throw new IllegalArgumentException(msg);
+            }
+        }
         return new When(property, is);
     }
 

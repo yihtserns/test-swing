@@ -19,15 +19,23 @@ public class DslPropertiesResolverTest {
 
     @Test
     public void shouldThrowWhenNotAllEnumValuesAreSpecified() {
-        thrown.expectMessage("Unspecified condition for when property enumValue is [UNUSED, UNUSED2]");
-        new DslPropertiesResolver(when(MyProperty.enumValue, is(EnumValue.USED, returns(MyProperty.someProp)))) {
+        thrown.expectMessage("Unspecified condition for when property enumProp is [UNUSED, UNUSED2]");
+        new DslPropertiesResolver(when(MyProperty.enumProp, is(EnumValue.USED, returns(MyProperty.someProp)))) {
+        };
+    }
+
+    @Test
+    public void shouldThrowWhenNotAllBooleanValuesAreSpecified() throws Exception {
+        thrown.expectMessage("Unspecified condition for when property boolProp is [false]");
+        new DslPropertiesResolver(when(MyProperty.boolProp, is(true, returns(MyProperty.someProp)))) {
         };
     }
 
     private enum MyProperty implements Property {
 
-        enumValue(EnumValue.class),
-        someProp(String.class);
+        enumProp(EnumValue.class),
+        someProp(String.class),
+        boolProp(Boolean.class);
 
         private Class<?> type;
 
