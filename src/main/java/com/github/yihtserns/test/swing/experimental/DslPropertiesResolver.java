@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,6 +44,19 @@ public abstract class DslPropertiesResolver implements PropertiesResolver {
     }
 
     protected static When when(Property property, Is... is) {
+        Class<?> type = property.type();
+        if (type.isEnum()) {
+            Set<?> enumValues = EnumSet.allOf(type.asSubclass(Enum.class));
+            for (Is i : is) {
+                enumValues.remove(i.value);
+            }
+            if (!enumValues.isEmpty()) {
+                String msg = String.format("Unspecified condition for when property %s is %s",
+                        property.name(),
+                        enumValues);
+                throw new IllegalArgumentException(msg);
+            }
+        }
         return new When(property, is);
     }
 
